@@ -12,7 +12,7 @@
   <a href="#-lab9"><img alt="lab9" src="https://img.shields.io/badge/Lab9-violet"></a> 
 </p>
 
-# <img src="https://github.com/user-attachments/assets/e080adec-6af7-4bd2-b232-d43cb37024ac" width="20" height="20"/> Лабораторная №1
+# <img src="https://github.com/user-attachments/assets/e080adec-6af7-4bd2-b232-d43cb37024ac" width="20" height="20"/> Lab1
 [Назад](#content)
 <h3 align="center">
   <a href="#client"></a>
@@ -29,29 +29,8 @@ ER-модель д.б. представлена в виде ER-диаграмм�
 
 </h3>
 
-Отнощения:
+Отношения:
 1. Реализация - один экземпляр книги принадлежит одному тиражу через атрибут Тираж FK.
 2. О чем книга - на одну тему ссылается множество книг, так же одна книга принадлежит нескольким темам.
 
-Книги:
-
-|  | SchemaName | TableName | ObjectI |
-| :--- | :--- | :--- | :--- |
-| master | dbo | spt\_fallback\_db | 117575457 |
-| master | dbo | spt\_fallback\_dev | 133575514 |
-| master | dbo | spt\_fallback\_usg | 149575571 |
-| master | dbo | spt\_monitor | 1803153469 |
-| master | dbo | MSreplication\_options | 2107154552 |
-
-| DatabaseName | SchemaName | TableName | ObjectId |
-| :--- | :--- | :--- | :--- |
-| Northwind | dbo | Customers | 901578250 |
-| Northwind | dbo | Order Details | 965578478 |
-
-| DatabaseName | SchemaName | TableName | ObjectId |
-| :--- | :--- | :--- | :--- |
-| msdb | dbo | sysssispackages | 231671873 |
-| msdb | dbo | sysssispackagefolders | 311672158 |
-| msdb | dbo | sysutility\_ucp\_aggregated\_mi\_health\_internal | 361768346 |
-| msdb | dbo | syspolicy\_execution\_internal | 432720594 |
-| ...  |
+![image](/sources/er_diagram.png)
