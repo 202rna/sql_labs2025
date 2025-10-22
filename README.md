@@ -267,3 +267,9 @@ INSERT INTO [Книга_Жанр] (id_книги, id_жанра) VALUES
 ## Database Diagram <sub>_SQL Server Management Studio 21_</sub>
 
 ![image](/sources/ssms_diag.png)
+
+# <img src="https://github.com/user-attachments/assets/e080adec-6af7-4bd2-b232-d43cb37024ac" width="20" height="20"/> Lab3
+[Назад](#content)
+
+
+## [Файл с примерами запросов обращения к БД](sources/query_examples.odt)
