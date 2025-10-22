@@ -275,8 +275,11 @@ WHERE BA.id_книги IN (
 );
 
 
+go
 
 select * from AuthorWhoHasSoauthor
+
+go
 
 with cte_query as (
 select [id_автора]
@@ -300,9 +303,85 @@ where [название] = 'АСТ'
 go
 
 select [id_книги], [id_автора],
-row_number() over (partition by [id_книги] order by [id_книги] desc),
-rank() over (partition by [id_книги] order by [id_книги] desc),
-dense_rank() over (partition by [id_книги] order by [id_книги] desc)
+row_number() over (order by [id_автора] desc),
+rank() over (order by [id_автора] desc),
+dense_rank() over (order by [id_автора] desc)
 from [dbo].[Книга_Автор];
 
 select * from [dbo].[Книга_Автор]
+
+
+SELECT [id_книги] 
+FROM [dbo].[Книга_Жанр] 
+WHERE [id_жанра] = (SELECT [id] FROM [dbo].[Жанр] WHERE [название] = 'Фантастика')
+INTERSECT
+SELECT [id_книги]
+FROM [dbo].[Книга_Тема] 
+WHERE [id_темы] = (SELECT [id] FROM [dbo].[Тема] WHERE [название] = 'Путешествия');
+
+
+SELECT [имя] AS [Имя] 
+FROM [dbo].[Автор]
+
+UNION ALL
+
+SELECT [ФИО] AS [Имя]
+FROM [dbo].[Покупатель];
+
+
+SELECT [имя] FROM [dbo].[Автор]
+EXCEPT
+SELECT A.[имя] 
+FROM [dbo].[Автор] A
+JOIN [dbo].[Книга_Автор] KA ON A.[id] = KA.[id_автора]
+JOIN [dbo].[Книга_Жанр] KG ON KA.[id_книги] = KG.[id_книги]
+JOIN [dbo].[Жанр] G ON KG.[id_жанра] = G.[id]
+WHERE G.[название] = 'Детектив'
+ORDER BY [имя];
+
+
+SELECT 
+    CASE WHEN [статус] = 1 THEN 'Выполнен' ELSE 'Не выполнен' END AS [Статус заказа],
+    COUNT(*) AS [Количество заказов],
+    SUM(T.[цена_продажи]) AS [Общая сумма продаж]
+FROM [dbo].[Заказ] Z
+JOIN [dbo].[Книга_экземпляр] KE ON Z.[id] = KE.[id_заказа]
+JOIN [dbo].[Тираж_книги] T ON KE.[id_тиража_книги] = T.[id]
+GROUP BY [статус];
+
+
+SELECT * FROM (
+    SELECT [название] AS JName, COUNT(*) AS Count
+    FROM [dbo].[Книга_Жанр] BJ
+	JOIN [dbo].[Жанр] J ON BJ.id_жанра = J.id
+    GROUP BY BJ.id_жанра, J.название
+) AS SourceTable
+PIVOT (
+    SUM(Count) FOR JName IN ([Фантастика], [Детектив], [Роман],
+	[Наука], [Поэзия], [Биография], [Ужасы], [Комедия], [Триллер],
+	[Фэнтези])
+) AS PivotTable;
+
+
+SELECT JName, Count
+FROM (
+    SELECT * FROM (
+        SELECT [название] AS JName, COUNT(*) AS Count
+        FROM [dbo].[Книга_Жанр] BJ
+        JOIN [dbo].[Жанр] J ON BJ.id_жанра = J.id
+        GROUP BY BJ.id_жанра, J.название
+    ) AS SourceTable
+    PIVOT (
+        SUM(Count) FOR JName IN ([Фантастика], [Детектив], [Роман],
+        [Наука], [Поэзия], [Биография], [Ужасы], [Комедия], [Триллер],
+        [Фэнтези])
+    ) AS PivotTable
+) AS P
+UNPIVOT (
+    Count FOR JName IN ([Фантастика], [Детектив], [Роман],
+    [Наука], [Поэзия], [Биография], [Ужасы], [Комедия], [Триллер],
+    [Фэнтези])
+) AS UnpivotTable;
+
+
+select * from [dbo].[Жанр]
