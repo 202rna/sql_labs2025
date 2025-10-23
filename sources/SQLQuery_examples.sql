@@ -385,3 +385,108 @@ UNPIVOT (
 
 
 select * from [dbo].[Жанр]
+
+
+use bookshop;
+
+select * from [dbo].[Автор]
+
+insert into [dbo].[Автор]([имя]) values ('Лев Толстой')
+
+select * from [dbo].[Книга_образец]
+
+insert into [dbo].[Книга_образец] values ('Юность')
+
+select * from [dbo].[Книга_Жанр]
+
+select * from [dbo].[Жанр]
+
+insert into [dbo].[Жанр]([название]) values ('Автобиографическая трилогия')
+
+insert into [dbo].[Книга_Жанр]([id_книги],[id_жанра]) values
+(18,11)
+
+select * from [dbo].[Тема]
+
+insert into [dbo].[Тема]([название]) values ('Социальная несправедливость')
+
+select * from [dbo].[Книга_Тема] -- 15 16 17 18
+
+insert into [dbo].[Книга_Тема]([id_книги], [id_темы]) values
+(15,10),(16,11),(17,10),(18,11)
+
+select * from [dbo].[Тираж_книги]
+
+insert into [dbo].[Тираж_книги] values ('2025-10-08', '2025-10-07', 100, 450, 250, 4)
+
+select * from [dbo].[Книга_экземпляр]
+
+insert into [dbo].[Книга_экземпляр]([id_тиража_книги],[id_образца], [id_заказа]) values
+(24, 16, 2),(24, 16, 2), (24, 16, 2)
+
+
+
+select * from [dbo].[Заказ]
+
+select * from [dbo].[Книга_Автор]
+
+insert into [dbo].[Книга_Автор] values
+(15,16), (16,16), (17,16), (18,16)
+
+WITH cteTol AS (
+    SELECT 1828 AS start_year
+    
+    UNION ALL
+    
+    SELECT start_year + 10
+    FROM cteTol
+    WHERE start_year < 2026
+)
+SELECT DISTINCT 
+    BS.название AS 'Название книги', 
+    B.шифр AS 'Шифр экземпляра',
+    c.start_year AS 'Юбилейный год'
+FROM cteTol c
+join [dbo].[Тираж_книги] T on YEAR(T.дата_поступления) = c.start_year
+join [dbo].[Книга_экземпляр] B on B.id_тиража_книги = T.id
+join [dbo].[Книга_образец] BS on BS.id = B.id_образца
+join [dbo].[Книга_Автор] BA on BA.id_книги = B.id_образца
+join [dbo].[Автор] A on A.id = BA.id_автора
+where
+    A.имя = 'Лев Толстой'
+
+select * from [dbo].[Тираж_книги]
+
+
+select
+	BT.id as 'Номер тиража'
+from
+	[dbo].[Тираж_книги] BT
+where
+	BT.дата_поступления >= DATEADD(MONTH, -1, GETDATE())
+	AND NOT EXISTS (
+		select 1
+		from 
+		[dbo].[Книга_экземпляр] B
+		join [dbo].[Заказ] O on O.id = B.id_заказа
+		where
+			BT.id = B.id_тиража_книги
+			AND (O.статус IN (1,2))
+	)
+
+
+select
+	min(T.цена_продажи - T.закупочная_цена) 
+	as 'Минимальная наценка',
+	max(T.цена_продажи - T.закупочная_цена) 
+	as 'Максимальная наценка'
+from
+	[dbo].[Тираж_книги] T
+
+select * from [dbo].[Тираж_книги]
+
+update [dbo].[Тираж_книги]
+set [цена_продажи] = 1000
+where id in (23,24)
+
+

@@ -165,10 +165,10 @@ BEGIN
         [шифр] INT IDENTITY(1,1) PRIMARY KEY,
         [id_тиража_книги] INT NOT NULL,
         [id_образца] INT NOT NULL,
-        [id_заказа] INT NULL,  -- Сделал NULL, чтобы экземпляр мог быть без заказа (в наличии)
+        [id_заказа] INT NULL,
         FOREIGN KEY ([id_тиража_книги]) REFERENCES [dbo].[Тираж_книги]([id]) ON DELETE CASCADE,
         FOREIGN KEY ([id_образца]) REFERENCES [dbo].[Книга_образец]([id]) ON DELETE CASCADE,
-        FOREIGN KEY ([id_заказа]) REFERENCES [dbo].[Заказ]([id]) ON DELETE SET NULL  -- SET NULL вместо CASCADE, если заказ удалён
+        FOREIGN KEY ([id_заказа]) REFERENCES [dbo].[Заказ]([id]) ON DELETE SET NULL
     );
 END
 
