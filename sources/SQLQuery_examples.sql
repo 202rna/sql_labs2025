@@ -490,3 +490,131 @@ set [цена_продажи] = 1000
 where id in (23,24)
 
 
+
+WITH MinMarkup AS (
+    SELECT MIN(T.цена_продажи - T.закупочная_цена) AS GlobalMinMarkup
+    FROM [dbo].[Тираж_книги] T
+)
+SELECT
+    T.id AS 'Номер тиража',
+    P.название,
+    (T.цена_продажи - T.закупочная_цена) AS 'Минимальная наценка'
+FROM
+    [dbo].[Тираж_книги] T
+    JOIN [dbo].[Издательство] P ON P.id = T.id_издательства
+WHERE
+    (T.цена_продажи - T.закупочная_цена) = (SELECT GlobalMinMarkup FROM MinMarkup);
+
+
+WITH MinMarkup AS (
+    SELECT MAX(T.цена_продажи - T.закупочная_цена) AS GlobalMinMarkup
+    FROM [dbo].[Тираж_книги] T
+)
+SELECT
+    T.id AS 'Номер тиража',
+    P.название,
+    (T.цена_продажи - T.закупочная_цена) AS 'Максимальная наценка'
+FROM
+    [dbo].[Тираж_книги] T
+    JOIN [dbo].[Издательство] P ON P.id = T.id_издательства
+WHERE
+    (T.цена_продажи - T.закупочная_цена) = (SELECT GlobalMinMarkup FROM MinMarkup);
+
+
+
+SELECT
+    P.название AS 'Издательство',
+    T.id AS 'Номер тиража',
+    (T.закупочная_цена - T.цена_продажи) AS 'Убыток'
+FROM
+    [dbo].[Тираж_книги] T
+    JOIN [dbo].[Издательство] P ON P.id = T.id_издательства
+WHERE
+    T.цена_продажи < T.закупочная_цена  -- Убыточные тиражи
+    AND T.дата_поступления < DATEADD(YEAR, -1, GETDATE())  -- Более года назад
+
+
+
+SELECT
+    P.название AS 'Издательство',
+    T.id AS 'Номер тиража',
+    (T.закупочная_цена - T.цена_продажи) AS 'Убыток'
+FROM
+    [dbo].[Тираж_книги] T
+    JOIN [dbo].[Издательство] P ON P.id = T.id_издательства
+WHERE
+    T.цена_продажи < T.закупочная_цена
+    AND T.дата_поступления < DATEADD(YEAR, -1, GETDATE())
+
+
+
+-- CTE для подсчёта купленных экземпляров (статус заказа = 0)
+WITH Purchased AS (
+    SELECT 
+        KE.id_тиража_книги,
+        COUNT(*) AS PurchasedCount
+    FROM [dbo].[Книга_экземпляр] KE
+    JOIN [dbo].[Заказ] Z ON Z.id = KE.id_заказа
+    WHERE Z.статус = 0  -- Предполагаем, что статус 0 = куплено; если нет, измени на нужный
+    GROUP BY KE.id_тиража_книги
+),
+-- CTE для общих данных по тиражу (с фильтром на дату > года назад)
+TotalInstances AS (
+    SELECT 
+        T.id AS TirazhId,
+        T.число_экземпляров,
+        T.дата_поступления,
+        T.цена_продажи,
+        T.закупочная_цена,
+        P.название AS Publisher,
+        KO.название AS Book
+    FROM [dbo].[Тираж_книги] T
+    JOIN [dbo].[Издательство] P ON P.id = T.id_издательства
+    -- Предполагаем, что все экземпляры тиража одной книги; берём DISTINCT для избежания дубликатов
+    JOIN (
+        SELECT DISTINCT id_тиража_книги, id_образца 
+        FROM [dbo].[Книга_экземпляр]
+    ) KE ON KE.id_тиража_книги = T.id
+    JOIN [dbo].[Книга_образец] KO ON KO.id = KE.id_образца
+    WHERE T.дата_поступления <= DATEADD(YEAR, -1, GETDATE())  -- Более года назад
+)
+-- Основной запрос: расчёт убытка и фильтр убыточных тиражей
+SELECT 
+    TI.Publisher AS 'Издательство',
+    TI.Book AS 'Книга',
+    TI.TirazhId AS 'Номер тиража',
+    (
+        (TI.число_экземпляров - ISNULL(P.PurchasedCount, 0)) * TI.закупочная_цена
+    ) - (
+        ISNULL(P.PurchasedCount, 0) * (TI.цена_продажи - TI.закупочная_цена)
+    ) AS 'Убыток'
+FROM TotalInstances TI
+LEFT JOIN Purchased P ON P.id_тиража_книги = TI.TirazhId
+WHERE (
+    (TI.число_экземпляров - ISNULL(P.PurchasedCount, 0)) * TI.закупочная_цена
+) - (
+    ISNULL(P.PurchasedCount, 0) * (TI.цена_продажи - TI.закупочная_цена)
+) > 0  -- Только убыточные (убыток > 0)
+ORDER BY TI.TirazhId;  -- Сортировка для удобства
+
+
+
+-- CTE для подсчёта проданных экземпляров по книге
+WITH SoldBooks AS (
+    SELECT 
+        KE.id_образца,
+        COUNT(*) AS SoldCount
+    FROM [dbo].[Книга_экземпляр] KE
+    JOIN [dbo].[Заказ] Z ON Z.id = KE.id_заказа
+    WHERE Z.статус = 0  -- Предполагаем статус 0 = куплено; измени, если нужно
+    GROUP BY KE.id_образца
+)
+-- Основной запрос: найти книгу(и) с максимальным количеством продаж
+SELECT 
+    KO.название AS 'Название книги',
+    SB.SoldCount AS 'Количество проданных экземпляров'
+FROM SoldBooks SB
+JOIN [dbo].[Книга_образец] KO ON KO.id = SB.id_образца
+WHERE SB.SoldCount = (
+    SELECT MAX(SoldCount) FROM SoldBooks
+)
