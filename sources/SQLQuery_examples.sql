@@ -468,10 +468,10 @@ where
 		select 1
 		from 
 		[dbo].[Книга_экземпляр] B
-		join [dbo].[Заказ] O on O.id = B.id_заказа
+		left join [dbo].[Заказ] O on O.id = B.id_заказа
 		where
 			BT.id = B.id_тиража_книги
-			AND (O.статус IN (1,2))
+			AND (O.статус != 0) 
 	)
 
 
@@ -547,20 +547,20 @@ WHERE
     AND T.дата_поступления < DATEADD(YEAR, -1, GETDATE())
 
 
+-------------------------------------------------------------------------
 
--- CTE для подсчёта купленных экземпляров (статус заказа = 0)
-WITH Purchased AS (
+WITH TotalBook AS (
     SELECT 
         KE.id_тиража_книги,
-        COUNT(*) AS PurchasedCount
+        COUNT(*) AS bookCount
     FROM [dbo].[Книга_экземпляр] KE
     JOIN [dbo].[Заказ] Z ON Z.id = KE.id_заказа
-    WHERE Z.статус = 0  -- Предполагаем, что статус 0 = куплено; если нет, измени на нужный
+    WHERE Z.статус = 0
     GROUP BY KE.id_тиража_книги
 ),
--- CTE для общих данных по тиражу (с фильтром на дату > года назад)
-TotalInstances AS (
-    SELECT 
+
+TotalTirazh AS (
+    SELECT
         T.id AS TirazhId,
         T.число_экземпляров,
         T.дата_поступления,
@@ -570,46 +570,39 @@ TotalInstances AS (
         KO.название AS Book
     FROM [dbo].[Тираж_книги] T
     JOIN [dbo].[Издательство] P ON P.id = T.id_издательства
-    -- Предполагаем, что все экземпляры тиража одной книги; берём DISTINCT для избежания дубликатов
-    JOIN (
-        SELECT DISTINCT id_тиража_книги, id_образца 
-        FROM [dbo].[Книга_экземпляр]
-    ) KE ON KE.id_тиража_книги = T.id
+    JOIN [dbo].[Книга_экземпляр] KE ON KE.id_тиража_книги = T.id
     JOIN [dbo].[Книга_образец] KO ON KO.id = KE.id_образца
-    WHERE T.дата_поступления <= DATEADD(YEAR, -1, GETDATE())  -- Более года назад
+    WHERE T.дата_поступления <= DATEADD(YEAR, -1, GETDATE())
 )
--- Основной запрос: расчёт убытка и фильтр убыточных тиражей
-SELECT 
+
+SELECT DISTINCT
     TI.Publisher AS 'Издательство',
     TI.Book AS 'Книга',
     TI.TirazhId AS 'Номер тиража',
-    (
-        (TI.число_экземпляров - ISNULL(P.PurchasedCount, 0)) * TI.закупочная_цена
-    ) - (
-        ISNULL(P.PurchasedCount, 0) * (TI.цена_продажи - TI.закупочная_цена)
-    ) AS 'Убыток'
-FROM TotalInstances TI
-LEFT JOIN Purchased P ON P.id_тиража_книги = TI.TirazhId
+    ((TI.число_экземпляров - ISNULL(P.bookCount, 0)) * TI.закупочная_цена) 
+    - (ISNULL(P.bookCount, 0) * (TI.цена_продажи - TI.закупочная_цена)) AS 'Убыток'
+FROM TotalTirazh TI
+LEFT JOIN TotalBook P ON P.id_тиража_книги = TI.TirazhId
 WHERE (
-    (TI.число_экземпляров - ISNULL(P.PurchasedCount, 0)) * TI.закупочная_цена
+    (TI.число_экземпляров - ISNULL(P.bookCount, 0)) * TI.закупочная_цена
 ) - (
-    ISNULL(P.PurchasedCount, 0) * (TI.цена_продажи - TI.закупочная_цена)
-) > 0  -- Только убыточные (убыток > 0)
-ORDER BY TI.TirazhId;  -- Сортировка для удобства
+    ISNULL(P.bookCount, 0) * (TI.цена_продажи - TI.закупочная_цена)
+) > 0
 
 
+--------------------------------------------------------------------
 
--- CTE для подсчёта проданных экземпляров по книге
+
 WITH SoldBooks AS (
     SELECT 
         KE.id_образца,
         COUNT(*) AS SoldCount
     FROM [dbo].[Книга_экземпляр] KE
     JOIN [dbo].[Заказ] Z ON Z.id = KE.id_заказа
-    WHERE Z.статус = 0  -- Предполагаем статус 0 = куплено; измени, если нужно
+    WHERE Z.статус = 0
     GROUP BY KE.id_образца
 )
--- Основной запрос: найти книгу(и) с максимальным количеством продаж
+
 SELECT 
     KO.название AS 'Название книги',
     SB.SoldCount AS 'Количество проданных экземпляров'
@@ -618,3 +611,320 @@ JOIN [dbo].[Книга_образец] KO ON KO.id = SB.id_образца
 WHERE SB.SoldCount = (
     SELECT MAX(SoldCount) FROM SoldBooks
 )
+
+---------------------------------
+with tmp as (
+select
+    k.id_образца,
+    k.id_тиража_книги,
+    count(*) as BooksCount -- Сколько книг одного образца в каждом тираже продано
+from
+    [dbo].[Книга_экземпляр] k
+    join [dbo].[Заказ] z on k.id_заказа = z.id
+where z.статус = 0
+group by
+    k.id_тиража_книги, k.id_образца
+)
+
+
+select
+    t.id, tmp.id_образца, tmp.BooksCount
+from
+    
+    [dbo].[Тираж_книги] t
+    left join tmp on tmp.id_тиража_книги = t.id
+order by
+    t.id
+
+--------------------------
+
+WITH SoldBooks AS (
+    SELECT 
+        KO.id AS id_образца,
+        COUNT(Z.id) AS SoldCount
+    FROM [dbo].[Книга_образец] KO
+    JOIN [dbo].[Книга_экземпляр] KE ON KE.id_образца = KO.id
+    LEFT JOIN [dbo].[Заказ] Z ON Z.id = KE.id_заказа AND Z.статус = 0       -- именно 0 чтобы после посчитать по этому атрибуту количество
+    GROUP BY KO.id
+)
+SELECT
+    KO.название AS 'Название книги',
+    SB.SoldCount AS 'Количество проданных экземпляров'
+FROM SoldBooks SB
+JOIN [dbo].[Книга_образец] KO ON KO.id = SB.id_образца
+WHERE SB.SoldCount = (
+    SELECT MAX(SoldCount) FROM SoldBooks
+);
+
+---------
+
+WITH SoldBooks AS (
+    SELECT 
+        KE.id_образца,
+        COUNT(Z.id) AS SoldCount
+    FROM [dbo].[Книга_образец] KO
+    LEFT JOIN [dbo].[Книга_экземпляр] KE ON KE.id_образца = KO.id
+    LEFT JOIN [dbo].[Заказ] Z ON Z.id = KE.id_заказа AND Z.статус = 0
+    WHERE Z.статус = 0
+    GROUP BY KE.id_образца
+)
+
+SELECT 
+    KO.название AS 'Название книги',
+    SB.SoldCount AS 'Количество проданных экземпляров'
+FROM SoldBooks SB
+JOIN [dbo].[Книга_образец] KO ON KO.id = SB.id_образца
+WHERE SB.SoldCount = (
+    SELECT MAX(SoldCount) FROM SoldBooks
+)
+
+
+----------------Lab4---------------------
+
+GO
+CREATE PROC [dbo].LossEditionCount
+AS
+WITH TotalBook AS (
+    SELECT 
+        KE.id_тиража_книги,
+        COUNT(*) AS bookCount
+    FROM [dbo].[Книга_экземпляр] KE
+    JOIN [dbo].[Заказ] Z ON Z.id = KE.id_заказа
+    WHERE Z.статус = 0
+    GROUP BY KE.id_тиража_книги
+),
+
+TotalTirazh AS (
+    SELECT
+        T.id AS TirazhId,
+        T.число_экземпляров,
+        T.дата_поступления,
+        T.цена_продажи,
+        T.закупочная_цена,
+        P.название AS Publisher,
+        KO.название AS Book
+    FROM [dbo].[Тираж_книги] T
+    JOIN [dbo].[Издательство] P ON P.id = T.id_издательства
+    JOIN [dbo].[Книга_экземпляр] KE ON KE.id_тиража_книги = T.id
+    JOIN [dbo].[Книга_образец] KO ON KO.id = KE.id_образца
+    WHERE T.дата_поступления <= DATEADD(MONTH, -1, GETDATE())
+)
+
+SELECT DISTINCT
+    TI.Publisher AS 'Издательство',
+    TI.Book AS 'Книга',
+    TI.TirazhId AS 'Номер тиража',
+    ((TI.число_экземпляров - ISNULL(P.bookCount, 0)) * TI.закупочная_цена) 
+    - (ISNULL(P.bookCount, 0) * (TI.цена_продажи - TI.закупочная_цена)) AS 'Убыток'
+FROM TotalTirazh TI
+LEFT JOIN TotalBook P ON P.id_тиража_книги = TI.TirazhId
+WHERE (
+    (TI.число_экземпляров - ISNULL(P.bookCount, 0)) * TI.закупочная_цена
+) - (
+    ISNULL(P.bookCount, 0) * (TI.цена_продажи - TI.закупочная_цена)
+) > 0
+
+GO
+EXEC LossEditionCount
+
+GO
+CREATE PROC [dbo].theme_books
+@book_theme VARCHAR(100)
+AS
+SELECT B.название
+FROM [dbo].[Книга_Тема] BT
+    JOIN [dbo].[Книга_образец] B ON B.id = BT.id_книги
+    JOIN [dbo].[Тема] T ON T.id = BT.id_темы
+WHERE
+    T.название = @book_theme
+
+GO
+DECLARE @theme varchar(100) = 'История'
+EXEC theme_books @theme
+
+select * from [dbo].[Тема]
+
+
+----
+GO
+CREATE PROC [dbo].most_popular_book
+@author_name VARCHAR(255),
+@book_name VARCHAR(255) OUT
+AS
+    declare @author_id INT
+
+    select TOP 1 @author_id = id
+    from [dbo].[Автор]
+    where имя = @author_name
+
+    select @book_name = b.название
+    from [dbo].[Книга_экземпляр] be
+    join [dbo].[Книга_образец] b on b.id = be.id_образца
+    join [dbo].[Книга_Автор] ba on ba.id_книги = b.id and ba.id_автора = @author_id
+    join [dbo].[Заказ] o on o.id = be.id_заказа and o.статус = 0
+    group by b.название
+    order by count(*) desc
+
+GO
+
+declare @book nvarchar(255)
+
+EXEC [dbo].most_popular_book @author_name = 'Иван Иванов', @book_name = @book OUTPUT;
+
+SELECT @book as 'Must popular book';
+
+exec sp_columns @table_name = 'Книга_образец'
+select * from [dbo].[Автор]
+
+
+select * from [dbo].[Заказ]
+update [dbo].[Заказ]
+set статус = 0
+where id in (1,5,6,7,8)
+select * from [dbo].[Книга_экземпляр]
+select * from [dbo].[Заказ]
+
+update [dbo].[Книга_экземпляр]
+set id_заказа = 1
+where
+    (шифр between 27 and 97)
+
+GO
+
+CREATE PROC [dbo].[GetTotalBook]
+AS
+BEGIN
+    SELECT 
+        KE.id_тиража_книги,
+        COUNT(*) AS bookCount
+    FROM [dbo].[Книга_экземпляр] KE
+    JOIN [dbo].[Заказ] Z ON Z.id = KE.id_заказа
+    WHERE Z.статус = 0
+    GROUP BY KE.id_тиража_книги;
+END;
+GO
+
+CREATE OR ALTER PROC [dbo].[GetLossReport]
+AS
+BEGIN
+
+    CREATE TABLE #TotalBook (
+        id_тиража_книги INT,
+        bookCount INT
+    );
+
+    INSERT INTO #TotalBook
+    EXEC [dbo].[GetTotalBook];
+
+    DECLARE @COUNT_TIRAZH INT;
+    SELECT @COUNT_TIRAZH = COUNT(*) FROM [dbo].[Тираж_книги];
+
+    WITH TotalTirazh AS (
+        SELECT
+            T.id AS TirazhId,
+            T.число_экземпляров,
+            T.цена_продажи,
+            T.закупочная_цена
+        FROM [dbo].[Тираж_книги] T
+        JOIN [dbo].[Книга_экземпляр] KE ON KE.id_тиража_книги = T.id
+    )
+
+    SELECT DISTINCT
+        COUNT(DISTINCT TI.TirazhId) AS 'Количество убыточных тиражей',
+        COUNT(DISTINCT TI.TirazhId) * 1.0 / @COUNT_TIRAZH * 100 AS 'Процент убыточных тиражей'
+    FROM TotalTirazh TI
+    JOIN #TotalBook P ON P.id_тиража_книги = TI.TirazhId
+    WHERE (
+        (TI.число_экземпляров - ISNULL(P.bookCount, 0)) * TI.закупочная_цена
+    ) - (
+        ISNULL(P.bookCount, 0) * (TI.цена_продажи - TI.закупочная_цена)
+    ) > 0;
+        print @COUNT_TIRAZH;
+
+    DROP TABLE #TotalBook;
+END;
+GO
+
+EXEC [dbo].[GetLossReport]
+
+use bookshop
+
+GO
+CREATE OR ALTER FUNCTION [dbo].[NameOfMostPopularBook]()
+RETURNS NVARCHAR(255)
+AS
+BEGIN
+
+    DECLARE @BookName NVARCHAR(255);
+
+    SELECT TOP 1
+        @BookName = B.название
+    FROM
+        [dbo].[Книга_экземпляр] BE
+        JOIN [dbo].[Заказ] O ON O.id = BE.id_заказа AND O.статус = 0
+        JOIN [dbo].[Книга_образец] B ON B.id = BE.id_образца
+    GROUP BY
+        BE.id_образца, B.название
+    ORDER BY
+        COUNT(*) DESC
+
+    RETURN @BookName;
+END
+
+GO
+SELECT [dbo].[NameOfMostPopularBook]() AS 'MUST POPULAR BOOK'
+
+GO
+CREATE FUNCTION TABLE_SOLD_BOOKS()
+RETURNS TABLE
+AS
+RETURN (
+    SELECT *
+    FROM [dbo].[Книга_образец] B
+    WHERE
+        NOT EXISTS (
+            SELECT 1
+            FROM [dbo].[Книга_экземпляр] BE
+            JOIN [dbo].[Заказ] O ON O.id = BE.id_заказа AND O.статус = 0 
+                AND B.id = BE.id_образца
+        )
+)
+
+GO
+SELECT * FROM TABLE_SOLD_BOOKS()
+
+
+GO
+
+CREATE FUNCTION popular_autors()
+RETURNS @MyTable TABLE (
+    Author NVARCHAR(255)
+)
+AS
+BEGIN
+    
+
+    INSERT INTO @MyTable (Author)
+    SELECT
+        A.имя
+    FROM
+        [dbo].[Книга_экземпляр] BE
+        JOIN [dbo].[Заказ] O ON O.id = BE.id_заказа AND O.статус = 0
+        JOIN [dbo].[Книга_образец] B ON B.id = BE.id_образца
+        JOIN [dbo].[Книга_Автор] BA ON BA.id_книги = B.id
+        JOIN [dbo].[Автор] A ON A.id = BA.id_автора
+    GROUP BY
+        A.имя
+    ORDER BY
+        COUNT(*) DESC
+
+    RETURN;
+END;
+
+GO
+
+SELECT * FROM popular_autors()
+
+
+GO
+
