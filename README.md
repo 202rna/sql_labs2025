@@ -151,12 +151,16 @@ BEGIN
         [цена_продажи] DECIMAL(10,2) NOT NULL,
         [число_экземпляров] INT NOT NULL,
         [закупочная_цена] DECIMAL(10,2) NOT NULL,
-        [id_издательства] INT NOT NULL,
-        FOREIGN KEY ([id_издательства]) REFERENCES [dbo].[Издательство]([id]) ON DELETE CASCADE,
+        [id_издательства] INT,
+        [id_книги_образца] INT,
+        FOREIGN KEY ([id_издательства]) REFERENCES [dbo].[Издательство]([id]) ON DELETE SET NULL,
+        FOREIGN KEY ([id_книги_образца]) REFERENCES [dbo].[Книга_образец]([id]) ON DELETE SET NULL,
         CHECK ([число_экземпляров] >= 0 AND [закупочная_цена] >= 0 AND [цена_продажи] >= 0 
               AND [дата_поступления] >= [дата_издания])
     );
 END
+
+
 
 -- Таблица Книга_экземпляр
 IF OBJECT_ID('dbo.[Книга_экземпляр]', 'U') IS NULL
@@ -169,6 +173,7 @@ BEGIN
         FOREIGN KEY ([id_тиража_книги]) REFERENCES [dbo].[Тираж_книги]([id]) ON DELETE CASCADE,
         FOREIGN KEY ([id_образца]) REFERENCES [dbo].[Книга_образец]([id]) ON DELETE CASCADE,
         FOREIGN KEY ([id_заказа]) REFERENCES [dbo].[Заказ]([id]) ON DELETE SET NULL
+
     );
 END
 
