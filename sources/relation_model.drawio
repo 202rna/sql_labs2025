@@ -23,7 +23,7 @@
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="fVQ5kR86QcLQXutgSoff-7" value="Тираж книги" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=26;fillColor=none;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-          <mxGeometry x="-500" y="410" width="230" height="182" as="geometry" />
+          <mxGeometry x="-500" y="410" width="230" height="208" as="geometry" />
         </mxCell>
         <mxCell id="fVQ5kR86QcLQXutgSoff-11" value="+ id: INT PK" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" parent="fVQ5kR86QcLQXutgSoff-7" vertex="1">
           <mxGeometry y="26" width="230" height="26" as="geometry" />
@@ -42,6 +42,9 @@
         </mxCell>
         <mxCell id="fVQ5kR86QcLQXutgSoff-10" value="+ издательство: INT FK" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" parent="fVQ5kR86QcLQXutgSoff-7" vertex="1">
           <mxGeometry y="156" width="230" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="APr8j-tYlReJb7ROF14r-1" value="+ книга образец: INT FK" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" vertex="1" parent="fVQ5kR86QcLQXutgSoff-7">
+          <mxGeometry y="182" width="230" height="26" as="geometry" />
         </mxCell>
         <mxCell id="JiXFAGyEJfDrCGkJZJWu-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="fVQ5kR86QcLQXutgSoff-16" target="fVQ5kR86QcLQXutgSoff-30" edge="1">
           <mxGeometry relative="1" as="geometry" />
@@ -101,7 +104,7 @@
           <mxGeometry y="52" width="170" height="26" as="geometry" />
         </mxCell>
         <mxCell id="fVQ5kR86QcLQXutgSoff-47" value="Автор" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=26;fillColor=none;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-          <mxGeometry x="-510" y="280" width="170" height="78" as="geometry" />
+          <mxGeometry x="-650" y="180" width="170" height="78" as="geometry" />
         </mxCell>
         <mxCell id="fVQ5kR86QcLQXutgSoff-48" value="+ id: INT PK" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" parent="fVQ5kR86QcLQXutgSoff-47" vertex="1">
           <mxGeometry y="26" width="170" height="26" as="geometry" />
@@ -188,6 +191,15 @@
         </mxCell>
         <mxCell id="ftXpzghv0Btky2a79E-M-1" value="+ id_заказа: INT FK" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" parent="C-vgISsHABUxN3Pyu070-1" vertex="1">
           <mxGeometry y="104" width="200" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="APr8j-tYlReJb7ROF14r-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.167;entryY=1.038;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="fVQ5kR86QcLQXutgSoff-7" target="fVQ5kR86QcLQXutgSoff-33">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="-385" y="280" />
+              <mxPoint x="-100" y="280" />
+              <mxPoint x="-100" y="149" />
+            </Array>
+          </mxGeometry>
         </mxCell>
       </root>
     </mxGraphModel>

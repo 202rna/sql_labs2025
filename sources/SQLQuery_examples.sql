@@ -928,3 +928,146 @@ SELECT * FROM popular_autors()
 
 GO
 
+SELECT * FROM [dbo].[Тираж_книги]
+
+GO
+
+CREATE OR ALTER TRIGGER check_tirazh_cost
+ON [dbo].[Тираж_книги]
+AFTER UPDATE
+AS
+    
+    IF UPDATE([цена_продажи])
+    BEGIN
+        IF EXISTS(
+            SELECT 1
+            FROM inserted
+            WHERE [дата_поступления] >= DATEADD(MONTH, -1, SYSDATETIME())
+        )
+        BEGIN
+                PRINT 'Транзакция запрещена! В запросе метяется цена тиража, поступившего менее месяца назад.';
+                ROLLBACK TRANSACTION;
+        END
+    END
+GO
+
+select * from [dbo].[Тираж_книги]
+
+select SYSDATETIME()
+
+insert into [dbo].[Тираж_книги]
+values ('2025-11-15','2025-11-10', 245, 10000, 200, 4)
+
+update [dbo].[Тираж_книги]
+set [цена_продажи] = 2334
+where id = 24
+
+GO
+
+CREATE OR ALTER TRIGGER delete_tirazh_with_sold_books
+ON [dbo].[Тираж_книги]
+INSTEAD OF DELETE
+AS
+    IF EXISTS(
+        SELECT 1
+        FROM deleted T
+        JOIN [dbo].[Книга_экземпляр] B ON T.id = B.id_тиража_книги
+        JOIN [dbo].[Заказ] O ON O.id = B.id_заказа AND O.статус = 0
+    )
+    BEGIN
+        print 'Запрещено удалять тиражи с проданными книгами!'
+        ROLLBACK TRANSACTION;
+    END
+
+GO
+
+delete from dbo.[Тираж_книги]
+where id = 5
+
+select * from Книга_экземпляр join Заказ on Книга_экземпляр.id_заказа = Заказ.id 
+and Заказ.статус = 0
+
+select * from Тираж_книги
+    -------
+alter table dbo.[Тираж_книги]
+alter column [id_издательства] INT
+
+SELECT 
+    name AS constraint_name
+FROM 
+    sys.foreign_keys
+WHERE 
+    parent_object_id = OBJECT_ID('dbo.[Тираж_книги]') 
+    AND referenced_object_id = OBJECT_ID('dbo.[Издательство]');
+
+
+
+ALTER TABLE dbo.[Тираж_книги]
+add constraint FK_SetNull
+        FOREIGN KEY ([id_издательства]) REFERENCES [dbo].[Издательство]([id]) ON DELETE set null
+
+
+alter table dbo.[Тираж_книги]
+add [id_книги_образца] int;
+
+alter table dbo.[Тираж_книги]
+add constraint FK_Book
+FOREIGN KEY ([id_книги_образца]) REFERENCES [dbo].[Книга_образец]([id]) ON DELETE SET NULL
+
+select * from Тираж_книги
+
+
+
+update Тираж_книги
+set id_книги_образца = 2
+where id in (28)
+
+GO
+CREATE OR ALTER TRIGGER add_tirazh_check
+ON dbo.[Тираж_книги]
+AFTER INSERT
+AS
+        WITH TotalBook AS (
+            SELECT 
+                KE.id_тиража_книги,
+                COUNT(*) AS bookCount
+            FROM [dbo].[Книга_экземпляр] KE
+            JOIN [dbo].[Заказ] Z ON Z.id = KE.id_заказа
+            WHERE Z.статус = 0
+            GROUP BY KE.id_тиража_книги
+        ),
+
+        TotalTirazh AS (
+            SELECT
+                T.id AS TirazhId,
+                T.число_экземпляров,
+                T.дата_поступления,
+                T.цена_продажи,
+                T.закупочная_цена,
+                P.название AS Publisher,
+                KO.название AS Book
+            FROM [dbo].[Тираж_книги] T
+            JOIN [dbo].[Издательство] P ON P.id = T.id_издательства
+            JOIN [dbo].[Книга_экземпляр] KE ON KE.id_тиража_книги = T.id
+            JOIN [dbo].[Книга_образец] KO ON KO.id = KE.id_образца
+            WHERE T.дата_поступления <= DATEADD(MONTH, -1, GETDATE())
+        ),
+        
+        IF EXISTS(
+            SELECT 1
+            FROM inserted I
+            WHERE I.id IN (
+                SELECT DISTINCT
+                    TI.[id_книги_образца]
+                FROM TotalTirazh TI
+                LEFT JOIN TotalBook P ON P.id_тиража_книги = TI.TirazhId
+                WHERE (
+                    (TI.число_экземпляров - ISNULL(P.bookCount, 0)) * TI.закупочная_цена
+                ) - (
+                    ISNULL(P.bookCount, 0) * (TI.цена_продажи - TI.закупочная_цена)
+                ) > 0
+            )
+        )
+        BEGIN
+        ROLLBACK TRANSACTION
+        END

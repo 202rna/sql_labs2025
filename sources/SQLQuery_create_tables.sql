@@ -80,12 +80,16 @@ BEGIN
         [цена_продажи] DECIMAL(10,2) NOT NULL,
         [число_экземпл€ров] INT NOT NULL,
         [закупочна€_цена] DECIMAL(10,2) NOT NULL,
-        [id_издательства] INT NOT NULL,
-        FOREIGN KEY ([id_издательства]) REFERENCES [dbo].[»здательство]([id]) ON DELETE CASCADE,
+        [id_издательства] INT,
+        [id_книги_образца] INT,
+        FOREIGN KEY ([id_издательства]) REFERENCES [dbo].[»здательство]([id]) ON DELETE SET NULL,
+        FOREIGN KEY ([id_книги_образца]) REFERENCES [dbo].[ нига_образец]([id]) ON DELETE SET NULL,
         CHECK ([число_экземпл€ров] >= 0 AND [закупочна€_цена] >= 0 AND [цена_продажи] >= 0 
               AND [дата_поступлени€] >= [дата_издани€])
     );
 END
+
+
 
 -- “аблица  нига_экземпл€р
 IF OBJECT_ID('dbo.[ нига_экземпл€р]', 'U') IS NULL
