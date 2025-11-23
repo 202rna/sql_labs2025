@@ -1027,47 +1027,42 @@ CREATE OR ALTER TRIGGER add_tirazh_check
 ON dbo.[Тираж_книги]
 AFTER INSERT
 AS
-        WITH TotalBook AS (
-            SELECT 
-                KE.id_тиража_книги,
-                COUNT(*) AS bookCount
-            FROM [dbo].[Книга_экземпляр] KE
-            JOIN [dbo].[Заказ] Z ON Z.id = KE.id_заказа
-            WHERE Z.статус = 0
-            GROUP BY KE.id_тиража_книги
-        ),
-
-        TotalTirazh AS (
-            SELECT
-                T.id AS TirazhId,
-                T.число_экземпляров,
-                T.дата_поступления,
-                T.цена_продажи,
-                T.закупочная_цена,
-                P.название AS Publisher,
-                KO.название AS Book
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM inserted I
+        WHERE I.id_книги_образца IN (
+            SELECT DISTINCT KO.id AS id_книги_образца
             FROM [dbo].[Тираж_книги] T
             JOIN [dbo].[Издательство] P ON P.id = T.id_издательства
             JOIN [dbo].[Книга_экземпляр] KE ON KE.id_тиража_книги = T.id
             JOIN [dbo].[Книга_образец] KO ON KO.id = KE.id_образца
+            LEFT JOIN (
+                SELECT 
+                    KE2.id_тиража_книги,
+                    COUNT(*) AS bookCount
+                FROM [dbo].[Книга_экземпляр] KE2
+                JOIN [dbo].[Заказ] Z ON Z.id = KE2.id_заказа
+                WHERE Z.статус = 0
+                GROUP BY KE2.id_тиража_книги
+            ) TB ON TB.id_тиража_книги = T.id
             WHERE T.дата_поступления <= DATEADD(MONTH, -1, GETDATE())
-        ),
-        
-        IF EXISTS(
-            SELECT 1
-            FROM inserted I
-            WHERE I.id IN (
-                SELECT DISTINCT
-                    TI.[id_книги_образца]
-                FROM TotalTirazh TI
-                LEFT JOIN TotalBook P ON P.id_тиража_книги = TI.TirazhId
-                WHERE (
-                    (TI.число_экземпляров - ISNULL(P.bookCount, 0)) * TI.закупочная_цена
-                ) - (
-                    ISNULL(P.bookCount, 0) * (TI.цена_продажи - TI.закупочная_цена)
-                ) > 0
-            )
+            AND (
+                T.число_экземпляров * T.закупочная_цена
+                - ISNULL(TB.bookCount, 0) * T.цена_продажи
+            ) > 0
         )
-        BEGIN
-        ROLLBACK TRANSACTION
-        END
+    )
+    BEGIN
+        ROLLBACK TRANSACTION;
+        RAISERROR('Операция отменена.', 16, 1);
+    END
+END;
+select * from Книга_образец -- 13 14 не убыточные 
+
+select * from Тираж_книги
+
+insert into Тираж_книги values
+('2025-01-23','2024-06-04',424,345,100,3,10)
+
+

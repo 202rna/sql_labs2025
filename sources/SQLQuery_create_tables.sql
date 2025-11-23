@@ -102,6 +102,7 @@ BEGIN
         FOREIGN KEY ([id_тиража_книги]) REFERENCES [dbo].[Тираж_книги]([id]) ON DELETE CASCADE,
         FOREIGN KEY ([id_образца]) REFERENCES [dbo].[Книга_образец]([id]) ON DELETE CASCADE,
         FOREIGN KEY ([id_заказа]) REFERENCES [dbo].[Заказ]([id]) ON DELETE SET NULL
+
     );
 END
 
