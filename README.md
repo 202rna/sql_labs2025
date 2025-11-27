@@ -285,3 +285,9 @@ INSERT INTO [Книга_Жанр] (id_книги, id_жанра) VALUES
 [Назад](#content)
 
 ## [Файл с лабораторной 4](sources/lab4.odt)
+
+
+# <img src="https://github.com/user-attachments/assets/e080adec-6af7-4bd2-b232-d43cb37024ac" width="20" height="20"/> Lab5
+[Назад](#content)
+
+## [Файл с лабораторной 5](sources/SQLQuery_create_roles.sql)
