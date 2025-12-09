@@ -291,3 +291,10 @@ INSERT INTO [Книга_Жанр] (id_книги, id_жанра) VALUES
 [Назад](#content)
 
 ## [Файл с лабораторной 5](sources/SQLQuery_create_roles.sql)
+
+# <img src="https://github.com/user-attachments/assets/e080adec-6af7-4bd2-b232-d43cb37024ac" width="20" height="20"/> Lab6
+[Назад](#content)
+### Схема узлов и ребер:
+![image](/sources/graph_diag.png)
+
+### [Файл скрапта создания графовых таблиц и выполнения задания 3.2](sources/SQLQuery_graph_db.sql)
