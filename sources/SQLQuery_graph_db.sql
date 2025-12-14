@@ -1,4 +1,3 @@
-USE [bookshop_graph];
 
 ---- бепьхмш ----
 
