@@ -277,20 +277,20 @@ INSERT INTO [Книга_Жанр] (id_книги, id_жанра) VALUES
 [Назад](#content)
 
 
-## [Файл с лабораторной 3](sources/lab3.odt)
+## [Файл отчета лаб. 3](sources/lab3.odt)
 
 
 
 # <img src="https://github.com/user-attachments/assets/e080adec-6af7-4bd2-b232-d43cb37024ac" width="20" height="20"/> Lab4
 [Назад](#content)
 
-## [Файл с лабораторной 4](sources/lab4.odt)
+## [Файл отчета лаб. 4](sources/lab4.odt)
 
 
 # <img src="https://github.com/user-attachments/assets/e080adec-6af7-4bd2-b232-d43cb37024ac" width="20" height="20"/> Lab5
 [Назад](#content)
 
-## [Файл с лабораторной 5](sources/SQLQuery_create_roles.sql)
+## [Файл отчета лаб. 5](sources/SQLQuery_create_roles.sql)
 
 # <img src="https://github.com/user-attachments/assets/e080adec-6af7-4bd2-b232-d43cb37024ac" width="20" height="20"/> Lab6
 [Назад](#content)
@@ -298,3 +298,17 @@ INSERT INTO [Книга_Жанр] (id_книги, id_жанра) VALUES
 ![image](/sources/graph_diag.png)
 
 ### [Файл скрапта создания графовых таблиц и выполнения задания 3.2](sources/SQLQuery_graph_db.sql)
+
+
+# <img src="https://github.com/user-attachments/assets/e080adec-6af7-4bd2-b232-d43cb37024ac" width="20" height="20"/> Lab7
+[Назад](#content)
+
+### [Файл отчета лаб. 7](sources/lab7.odt)
+
+
+
+
+
+
+
+
