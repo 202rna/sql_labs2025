@@ -305,7 +305,10 @@ INSERT INTO [Книга_Жанр] (id_книги, id_жанра) VALUES
 
 ### [Файл отчета лаб. 7](sources/lab7.odt)
 
+# <img src="https://github.com/user-attachments/assets/e080adec-6af7-4bd2-b232-d43cb37024ac" width="20" height="20"/> Lab8
+[Назад](#content)
 
+### [Файл отчета лаб. 8](sources/lab8.odt)
 
 
 
